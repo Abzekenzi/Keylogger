@@ -1,7 +1,10 @@
 import socket
 
+BUFFER_SIZE = 10
+
 def main():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    buffer = bytearray()
 
     host = '127.0.0.1'
     port = 4444
@@ -10,16 +13,17 @@ def main():
     server_socket.listen()
 
     conn, addr = server_socket.accept()
-    try:
-        while True:
-            data = conn.recv(2048)
+    
+    while True:
+        if len(buffer) <= BUFFER_SIZE:
+            data = conn.recv(1)
             if data:
-                data_string = data.decode('utf-8')
-                print(data_string)
+                buffer.extend(data)
             else:
-                conn.close()
-    except Exception as e:
-        print("Error occured in data receiving: ", e)
+                print("No data has been received")
+        else:
+            print(buffer.decode().replace("''", ""))
+            buffer.clear()
 
 
 
